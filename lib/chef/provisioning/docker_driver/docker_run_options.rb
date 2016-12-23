@@ -363,12 +363,17 @@ class DockerRunOptions
   cli_option :interactive, :boolean, api: [ 'OpenStdin', 'AttachStdin' ]
   #   --ip=""                       Container IPv4 address (e.g. 172.30.100.104)
   cli_option :ip do |config, value|
+    #puts "set IP==== #{value}"
+
     # Where this goes depends on the network! TODO doesn't work with `--net`
-    config["NetworkSettings"] ||= {}
-    network = config["NetworkMode"] || "default"
-    config["NetworkSettings"][network] ||= {}
-    config["NetworkSettings"][network]["IPAMConfig"] ||= {}
-    config["NetworkSettings"][network]["IPAMConfig"]["IPv4Address"] = value
+    config["NetworkingConfig"] ||= {}
+    config["NetworkingConfig"]['EndpointsConfig'] ||= {}
+    network = config['HostConfig']["NetworkMode"] || "default"
+
+    #puts "set ip for network #{network}"
+    config["NetworkingConfig"]['EndpointsConfig'][network] ||= {}
+    config["NetworkingConfig"]['EndpointsConfig'][network]["IPAMConfig"] ||= {}
+    config["NetworkingConfig"]['EndpointsConfig'][network]["IPAMConfig"]["IPv4Address"] = value
   end
   #   --ip6=""                      Container IPv6 address (e.g. 2001:db8::33)
   cli_option :ip6 do |config, value|
@@ -421,12 +426,17 @@ class DockerRunOptions
   #                                 'host': use the Docker host network stack
   #                                 '<network-name>|<network-id>': connect to a user-defined network
   cli_option :net do |config, value|
+
+    #puts "set net==== #{value}"
     value = value.to_s
-    old_network = config["NetworkMode"] || "default"
-    config["NetworkMode"] = value
+    old_network = config['HostConfig']["NetworkMode"] || "default"
+    config['HostConfig']["NetworkMode"] = value
+
+    #puts "old network: #{old_network}"
+
     # If we already stored stuff in the default network, move it to the new network
-    if config["NetworkSettings"] && config["NetworkSettings"][old_network]
-      config["NetworkSettings"][value] = config["NetworkSettings"].delete(old_network)
+    if config["NetworkingConfig"] && config['NetworkingConfig']['EndpointsConfig'] && config["NetworkingConfig"]['EndpointsConfig'][old_network]
+      config["NetworkingConfig"]['EndpointsConfig'][value] = config["NetworkingConfig"]['EndpointsConfig'].delete(old_network)
     end
   end
   #   --net-alias=[]                Add network-scoped alias for the container

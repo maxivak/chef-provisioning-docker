@@ -8,9 +8,9 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = ['README.md', 'LICENSE' ]
   s.summary = 'Provisioner for creating Docker containers in Chef Provisioning.'
   s.description = s.summary
-  s.author = 'Tom Duffield'
-  s.email = 'tom@chef.io'
-  s.homepage = 'https://github.com/chef/chef-provisioning-docker'
+  s.author = 'MAx Ivak, Tom Duffield'
+  s.email = 'maxivak@gmail.com'
+  s.homepage = 'https://github.com/maxivak/chef-provisioning-docker'
 
   s.add_dependency 'chef'
   s.add_dependency 'chef-provisioning', '>= 2.0', '< 3.0'

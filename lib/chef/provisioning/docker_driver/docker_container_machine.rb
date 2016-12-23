@@ -32,6 +32,9 @@ module DockerDriver
     end
 
     def converge(action_handler)
+
+      #puts "** CONVERGE **"
+
       # First, grab and start the converge container if it's there ...
       transport.container = converge_container_for(machine_spec)
       if !transport.container
@@ -115,23 +118,34 @@ module DockerDriver
         'name' => "chef-converge.#{machine_spec.reference['container_name']}",
         'Cmd' => [ "/bin/sh", "-c", "while true;do sleep 1000; done" ],
       )
+
+      #puts "build CONVERGE"
+
       # If we're using Docker Toolkit, we need to use host networking for the converge
       # so we can open up the port we need. Don't force it in other cases, though.
       if transport.is_local_machine(URI(transport.config[:chef_server_url]).host) &&
          transport.docker_toolkit_transport(@connection.url)
+
         config['HostConfig'] ||= {}
         config['HostConfig'].merge!('NetworkMode' => 'host')
         # These are incompatible with NetworkMode: host
         config['HostConfig'].delete('Links')
         config['HostConfig'].delete('ExtraHosts')
-        config.delete('NetworkSettings')
+        #config.delete('NetworkSettings')
+        config.delete('NetworkingConfig')
       end
       # Don't use any resources that need to be shared (such as exposed ports)
       config.delete('ExposedPorts')
 
+      config['HostConfig'] ||= {}
+      #config['HostConfig'].merge!('NetworkMode' => 'host')
+      config['HostConfig'].delete('NetworkMode')
+      config.delete('NetworkingConfig')
+
       Chef::Log.debug("Creating converge container with config #{config} ...")
       action_handler.perform_action "create container to converge #{machine_spec.name}" do
         # create deletes the name :(
+
         Docker::Container.create(config.dup, @connection)
         converge_container = Docker::Container.get(config['name'], {}, @connection)
         Chef::Log.debug("Created converge container #{converge_container.id}")
@@ -174,6 +188,10 @@ module DockerDriver
         'name' => machine_spec.reference['container_name'],
         'Image' => converged_image.id
       )
+
+      container_name = machine_spec.reference['container_name']
+
+      ###
       action_handler.perform_action "create final container for #{machine_spec.name}" do
         container = Docker::Container.create(config, @connection)
         machine_spec.reference['container_id'] = container.id
